@@ -287,5 +287,5 @@ A API retorna mensagens padronizadas para erros comuns:
 **Saullo Paulo Dantas Felipe**  
 📍 Juazeiro do Norte - CE  
 🎓 Estudante de Engenharia de Software  
-💼 Técnico de Informática e Desenvolvedor Mobile / Backend  
+💼 Desenvolvedor Mobile | Backend | Software Engineer  
 🌐 [GitHub: Saullo-Programador](https://github.com/Saullo-Programador)
