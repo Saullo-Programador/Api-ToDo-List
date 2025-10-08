@@ -1,70 +1,81 @@
 package com.example.todo_list.service;
 
+import com.example.todo_list.dto.TodoRequestDTO;
+import com.example.todo_list.dto.TodoResponseDTO;
 import com.example.todo_list.infrastructure.entity.Todo;
 import com.example.todo_list.infrastructure.repository.TodoRepository;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import javax.swing.text.html.Option;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class TodoService {
-    private static Logger logger= Logger.getLogger(TodoService.class.getName());
-    private final TodoRepository todoRepository;
 
+    private final TodoRepository todoRepository;
 
     public TodoService(TodoRepository todoRepository) {
         this.todoRepository = todoRepository;
     }
 
-    //
-    public List<Todo> list(){
-        Sort sort = Sort.by(Sort.Direction.ASC,"id");
-        return todoRepository.findAll(sort);
+    public List<TodoResponseDTO> list() {
+        return todoRepository.findAll(Sort.by(Sort.Direction.ASC, "id"))
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<Todo> GetToDoById(long id){
-        return todoRepository.findById(id);
+    public TodoResponseDTO getById(Long id) {
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
+        return toResponseDTO(todo);
     }
 
-    public Long create(Todo todo){
-        long id = 0;
+    public TodoResponseDTO create(TodoRequestDTO dto) {
+        Todo todo = new Todo();
+        todo.setTodoTitle(dto.getTodoTitle());
+        todo.setTodoDescription(dto.getTodoDescription());
+        todo.setTodoDate(dto.getTodoDate());
+        todo.setComplete(dto.isComplete());
         todoRepository.save(todo);
-        id = todo.getId();
-        return id;
+        return toResponseDTO(todo);
     }
 
-    public Long update(Long id,Todo todo){
-        long updateToDoId = 0;
-        try {
-            Todo updateToDo = todoRepository.findById(id).get();
+    public TodoResponseDTO update(Long id, TodoRequestDTO dto) {
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
 
-            updateToDo.setTodoTitle(todo.getTodoTitle());
-            updateToDo.setTodoDescription(todo.getTodoDescription());
-            updateToDo.setTodoDate(todo.getTodoDate());
-            updateToDo.setComplete(todo.isComplete());
-            todoRepository.save(updateToDo);
-            updateToDoId = updateToDo.getId();
-            return updateToDoId;
-        } catch (Exception e){
-            e.printStackTrace();
+        todo.setTodoTitle(dto.getTodoTitle());
+        todo.setTodoDescription(dto.getTodoDescription());
+        todo.setTodoDate(dto.getTodoDate());
+        todo.setComplete(dto.isComplete());
+
+        todoRepository.save(todo);
+        return toResponseDTO(todo);
+    }
+
+    public void delete(Long id) {
+        if (!todoRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado");
         }
-        return updateToDoId;
-    }
-
-    public void delete(Long id){
         todoRepository.deleteById(id);
-        logger.info("Item removed from the list");
     }
 
-    public boolean isToDoItemIdValid(long id){
-        return todoRepository.findById(id).isPresent();
-    }
-
-    public long getNumberToDoItem(){
+    public long count() {
         return todoRepository.count();
+    }
+
+    private TodoResponseDTO toResponseDTO(Todo todo) {
+        return new TodoResponseDTO(
+                todo.getId(),
+                todo.getTodoTitle(),
+                todo.getTodoDescription(),
+                todo.isComplete(),
+                todo.getTodoDate(),
+                todo.getCreateDate(),
+                todo.getUpdateDate()
+        );
     }
 }
